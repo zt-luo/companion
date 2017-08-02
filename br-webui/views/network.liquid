@@ -82,6 +82,60 @@ socket.on('cpu stats', function(data) {
 	document.getElementById('ramTotal').innerHTML = data.ram_total.toFixed(3) + ' MB';
 });
 
+// Listen for packet drop rule read response
+socket.on('drop rule response', function(data) {
+	var entries = data.toString().split("\n");
+	var header	= entries.splice(0,2);
+	var chain	= header[0].split(" ")[1];	 // second word in title
+
+	var table_id = 'drop rule ' + chain.toLowerCase() + ' table';
+	var html;
+	html  = '<table>';
+	html += '<tr>';
+	html += '<th>ID</th>';
+	html += '<th>Target</th>';
+	html += '<th>Protocol</th>';
+	html += '<th>Opt</th>';
+	html += '<th>Source</th>';
+	html += '<th>Destination</th>';
+	html += '<th>Notes</th>';
+	html += '</tr>';
+
+	// Add individual entries
+	for (var i = 0; i < entries.length - 1; i++) {
+		var fields	= entries[i].split(" ").filter(Boolean);
+		var elements = fields.splice(0,6);
+		elements.push(fields.join(" "));
+
+		html += '<tr>';
+		for (var j = 0; j < elements.length; j++) {		   
+			html += '<td>';
+			html += elements[j].trim();
+			html += '</td>';
+		}
+
+		html += '<td>';
+//		  html += '<button type="button" onclick="editDropRule(\'' + chain + '\',' + elements[2] + ')">Edit</button>';
+		html += '<button type="button" onclick="deleteDropRule(\'' + chain + '\',' + elements[0] + ')">Delete</button>';
+		html += '</td>';
+
+		html += '</tr>';
+	}
+
+	document.getElementById(table_id).innerHTML = html;
+});
+
+socket.on('terminal output', function(data) {
+	writeToTerminal(data);
+});
+
+function writeToTerminal(data) {
+	var terminal_element = document.getElementById("terminal-output");
+	var currentHTML = terminal_element.innerHTML;
+	terminal_element.innerHTML = currentHTML + data;
+	terminal_element.scrollTop = terminal_element.scrollHeight;
+}
+
 // Convert Bytes per second to Megabits per second
 function formatMbps(Bps) {
 	var Mbps = Bps * 8 * 0.000001;
@@ -101,7 +155,89 @@ function testUpload() {
 function testDownload() {
 	net.download.start();
 }
+
+function writeDropRule() {
+	// Regular Expression pattern definitions
+	var chain_regex = new RegExp(/^INPUT$|^FORWARD$|^OUTPUT$|/);
+	var proto_regex = new RegExp(/^[a-z]+$/);
+	var ip_regex	= new RegExp(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/);
+	var port_regex	= new RegExp(/^[0-9]+$/);
+	var prob_regex	= new RegExp(/^0*$|^0*\.[0-9]*$|^0*1$|^0*1\.0*$/);
+
+	// Copy input field values to local variables
+	var _chain	  = document.getElementById("write drop chain").value;
+	var _protocol = document.getElementById("write drop protocol").value;
+	var _ip_s	  = document.getElementById("write drop ip_s").value;
+	var _port_s	  = document.getElementById("write drop port_s").value;
+	var _ip_d	  = document.getElementById("write drop ip_d").value;
+	var _port_d	  = document.getElementById("write drop port_d").value;
+	var _prob	  = document.getElementById("write drop prob").value;
+
+	// Pack it all up into one object
+	var data = { chain:		_chain,
+				 protocol:	_protocol,
+				 ip_s:		_ip_s,
+				 port_s:	_port_s,
+				 ip_d:		_ip_d,
+				 port_d:	_port_d,
+				 prob:		_prob };
+
+	// Check if we have proper values before sending
+	var check = true;
+	check = check && chain_regex.test(_chain);
+	check = check && proto_regex.test(_protocol);
+	check = check && ip_regex.test(_ip_s);
+	check = check && port_regex.test(_port_s);
+	check = check && ip_regex.test(_ip_d);
+	check = check && port_regex.test(_port_d);
+	check = check && prob_regex.test(_prob);
+
+	if (check) {
+		socket.emit('write drop rule', data);
+	} else {
+		writeToTerminal('One or more parameters is invalid!\n');
+	}
+}
+
+function deleteDropRule(_chain, _id) {
+	var data = {chain:_chain, id:_id};
+	socket.emit('delete drop rule', data);
+}
+
+function readDropRules(_chain) {
+	var data = {chain:_chain};
+	socket.emit('read drop rule', data);
+}
+
+function readAllDropRules() {
+	readDropRules('INPUT');
+	readDropRules('FORWARD');
+	readDropRules('OUTPUT');
+}
+
+readAllDropRules();
+
+function inputFocus(input) {
+	if (input.value==input.defaultValue && !input.checked) {
+		input.value = "";
+		input.style.color = "#000";
+	}
+}
+function inputBlur(input) {
+	if (input.value=="") {
+		input.value = input.defaultValue;
+		input.style.color="#888";
+		input.checked = false;
+	} else {
+		input.checked = true;
+	}
+}
 </script>
+
+<!-- Temporary CSS styling -->
+<style>
+th, td { padding: 5px; }
+</style>
 
 <!-- Companion Computer Status -->
 <div class="row">
@@ -156,6 +292,102 @@ function testDownload() {
 						<h3 id="download results"></h6>
 					</div>
 				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Packet Drop Tool -->
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					Packet Drop Tool
+				</h3>
+			</div>
+			<div class="panel-body">
+				<h4>INPUT</h4>
+				<div id="drop rule input table"></div>
+
+				<h4>FORWARD</h4>
+				<div id="drop rule forward table"></div>
+
+				<h4>OUTPUT</h4>
+				<div id="drop rule output table"></div>
+
+				<br><br>
+
+				<!-- New rule input section -->
+				<table>
+					<tr>
+						<th>Chain</th>
+						<th>Protocol</th>
+						<th>Source IP</th>
+						<th>Destination IP</th>
+						<th>Probability</th>
+					</tr>
+					<tr>
+						<td>
+							<select id="write drop chain">
+								<option value="INPUT">INPUT</option>
+								<option value="FORWARD">FORWARD</option>
+								<option value="OUTPUT">OUTPUT</option>
+							</select>
+						</td>
+						<td>
+							<select id="write drop protocol">
+							<option value="all">ALL</option>
+							<option value="tcp">TCP</option>
+							<option value="udp">UDP</option>
+							</select>
+						</td>
+						<td>
+							<input type="text" id="write drop ip_s"
+								size="15" maxlength="15"
+								value="0.0.0.0" style="color:#888;"
+								onfocus="inputFocus(this)" 
+								onblur="inputBlur(this)">
+							:
+							<input type="text" id="write drop port_s"
+								size="5" maxlength="5"
+								value="0" style="color:#888;"
+								onfocus="inputFocus(this)" 
+								onblur="inputBlur(this)">
+						</td>
+						<td>
+							<input type="text" id="write drop ip_d"
+								size="15" maxlength="15"
+								value="0.0.0.0" style="color:#888;"
+								onfocus="inputFocus(this)" 
+								onblur="inputBlur(this)">
+							:
+							<input type="text" id="write drop port_d"
+								size="5" maxlength="5"
+								value="0" style="color:#888;"
+								onfocus="inputFocus(this)" 
+								onblur="inputBlur(this)">
+						</td>
+						<td>
+							<input type="text" id="write drop prob"
+								size="10" maxlength="10"
+								value="0.0" style="color:#888;"
+								onfocus="inputFocus(this)" 
+								onblur="inputBlur(this)">
+						</td>
+						<td>
+							<button type="button" onclick="writeDropRule()">
+								Add
+							</button>
+						</td>
+					</tr>
+				</table>
+
+				<br>
+
+				<textarea rows="5" cols="120" id="terminal-output"
+					style="font-family:monospace" readonly></textarea>
+
 			</div>
 		</div>
 	</div>

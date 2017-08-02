@@ -737,7 +737,112 @@ io.on('connection', function(socket) {
 		});	
 	});
 	
+	// Packet drop tool: Write
+	socket.on('write drop rule', function(data) {
+		logger.log('write drop rule');
+		// Regular Expression pattern definitions
+		var chain_regex = new RegExp(/^INPUT$|^FORWARD$|^OUTPUT$|/);
+		var proto_regex = new RegExp(/^[a-z]+$/);
+		var ip_regex	= new RegExp(/^\d+\.\d+\.\d+\.\d+$/);
+		var port_regex	= new RegExp(/^[0-9]+$/);
+		var prob_regex	= new RegExp(/^0*$|^0*\.[0-9]*$|^0*1$|^0*1\.0*$/);
+
+		// packet drop rule parameters
+		var chain	 = chain_regex.test(data.chain) ? data.chain : 'FORWARD';
+		var protocol = proto_regex.test(data.protocol) ? data.protocol : 'all';
+		var ip_s	 = ip_regex.test(data.ip_s) ? data.ip_s : '0.0.0.0';
+		var port_s	 = port_regex.test(data.port_s) ? data.port_s : 0;
+		var ip_d	 = ip_regex.test(data.ip_d) ? data.ip_d : '0.0.0.0';
+		var port_d	 = port_regex.test(data.port_d) ? data.port_d : 0;
+		var prob	 = prob_regex.test(data.prob) ? data.prob : 0;
+
+		// Call bash script to add/modify rule
+		var sh_call = _companion_directory + '/scripts/packet_rules.sh write '
+			+ chain + ' ' + protocol + ' ' + ip_s + ' ' + port_s + ' '
+			+ ip_d + ' ' + port_d + ' ' + prob;
+
+		var cmd = child_process.exec(sh_call, function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+
+		// Data returned
+		cmd.stdout.on('data', function (data) {
+			logger.log(data.toString());
+			socket.emit('drop rule response', data.toString());
+		});
+
+		// Error handling
+		cmd.stderr.on('data', function (data) {
+			logger.error(data.toString());
+			socket.emit('terminal output', data.toString());
+		});
+
+		cmd.on('exit', function (code) {
+			logger.log('read drop rule exited with code ' + code.toString());
+		});
+
+		cmd.on('error', (err) => {
+			logger.error('read drop rule errored: ', err.toString());
+		});
+		
+	});
+
+	// Packet drop tool: Delete
+	socket.on('delete drop rule', function(data) {
+		logger.log('delete drop rule');
+		var cmd = child_process.exec(_companion_directory + '/scripts/packet_rules.sh delete ' + data.chain + ' ' + data.id, function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+
+		// Data returned
+		cmd.stdout.on('data', function (data) {
+			logger.log(data.toString());
+			socket.emit('drop rule response', data.toString());
+		});
+
+		// Error handling
+		cmd.stderr.on('data', function (data) {
+			logger.error(data.toString());
+			socket.emit('terminal output', data.toString());
+		});
+
+		cmd.on('exit', function (code) {
+			logger.log('read drop rule exited with code ' + code.toString());
+		});
+
+		cmd.on('error', (err) => {
+			logger.error('read drop rule errored: ', err.toString());
+		});
+	});
+
+	// Packet drop tool: Read
+	socket.on('read drop rule', function(data) {
+		logger.log('read drop rule');
+		var cmd = child_process.exec(_companion_directory + '/scripts/packet_rules.sh read ' + data.chain, function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+
+		cmd.stdout.on('data', function (data) {
+			logger.log(data.toString());
+			socket.emit('drop rule response', data.toString());
+		});
+		
+		cmd.stderr.on('data', function (data) {
+			logger.error(data.toString());
+			socket.emit('terminal output', data.toString());
+		});
+		
+		cmd.on('exit', function (code) {
+			logger.log('read drop rule exited with code ' + code.toString());
+		});
+		
+		cmd.on('error', (err) => {
+			logger.error('read drop rule errored: ', err.toString());
+		});
+		
+	});
 	
+	// Restart video
 	socket.on('restart video', function(data) {
 		logger.log(_companion_directory + '/scripts/restart-raspivid.sh "' + data.rpiOptions + '" "' + data.gstOptions + '"');
 		var cmd = child_process.spawn(_companion_directory + '/scripts/restart-raspivid.sh', [data.rpiOptions , data.gstOptions], {
