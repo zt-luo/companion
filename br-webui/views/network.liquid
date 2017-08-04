@@ -125,8 +125,9 @@ socket.on('drop rule response', function(data) {
 			html += '<td>';
 //			   html += '<button type="button" onclick="editDropRule(\'' + chain
 //					   + '\',' + elements[2] + ')">Edit</button>';
-			html += '<button type="button" onclick="deleteDropRule(\'' + chain
-					+ '\',' + elements[0] + ')">Delete</button>';
+			html += '<button type="button" class="btn" '
+					+ 'onclick="deleteDropRule(\'' + chain + '\','
+					+ elements[0] + ')">Delete</button>';
 			html += '</td>';
 
 			html += '</tr>';
@@ -326,17 +327,18 @@ th, td { padding: 5px; }
 					</tr>
 					<tr>
 						<td>
-							<select id="write drop chain">
+							<select id="write drop chain" class="form-control">
 								<option value="INPUT">INPUT</option>
 								<option value="FORWARD">FORWARD</option>
 								<option value="OUTPUT">OUTPUT</option>
 							</select>
 						</td>
 						<td>
-							<select id="write drop protocol">
-							<option value="all">ALL</option>
-							<option value="tcp">TCP</option>
-							<option value="udp">UDP</option>
+							<select id="write drop protocol"
+								class="form-control">
+								<option value="all">ALL</option>
+								<option value="tcp">TCP</option>
+								<option value="udp">UDP</option>
 							</select>
 						</td>
 						<td>
@@ -373,9 +375,8 @@ th, td { padding: 5px; }
 								onblur="inputBlur(this)">
 						</td>
 						<td>
-							<button type="button" onclick="writeDropRule()">
-								Add
-							</button>
+							<button type="button" onclick="writeDropRule()"
+								class="btn btn-primary">Add</button>
 						</td>
 					</tr>
 				</table>
