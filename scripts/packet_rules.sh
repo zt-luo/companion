@@ -133,4 +133,4 @@ case $ACTION in
 esac
 
 # Always return an updated list
-sudo iptables -L $CHAIN --line-numbers
+sudo iptables -L --line-numbers

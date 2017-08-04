@@ -84,42 +84,53 @@ socket.on('cpu stats', function(data) {
 
 // Listen for packet drop rule read response
 socket.on('drop rule response', function(data) {
+	var int_regex = new RegExp(/^[0-9]+$/);
 	var entries = data.toString().split("\n");
-	var header	= entries.splice(0,2);
-	var chain	= header[0].split(" ")[1];	 // second word in title
 
-	var table_id = 'drop rule ' + chain.toLowerCase() + ' table';
+	// Start table
+	var table_id = 'drop rule table';
 	var html;
 	html  = '<table>';
-	html += '<tr>';
-	html += '<th>ID</th>';
-	html += '<th>Target</th>';
-	html += '<th>Protocol</th>';
-	html += '<th>Opt</th>';
-	html += '<th>Source</th>';
-	html += '<th>Destination</th>';
-	html += '<th>Notes</th>';
-	html += '</tr>';
 
-	// Add individual entries
-	for (var i = 0; i < entries.length - 1; i++) {
-		var fields	= entries[i].split(" ").filter(Boolean);
-		var elements = fields.splice(0,6);
-		elements.push(fields.join(" "));
+	for (var i = 0; i < entries.length; i++) {
+		var raw_elements = entries[i].split(" ").filter(Boolean);
+		
+		if (raw_elements[0] == "Chain") {  // first line of new chain
+			var chain = raw_elements[1].trim();
 
-		html += '<tr>';
-		for (var j = 0; j < elements.length; j++) {		   
+			// Add label for this section of the table
+			html += '<tr><td colspan=6><h3>' + chain + '</h3></td></tr>';
+
+			// Set up the headers
+			html += '<tr>';
+			html += '<th>ID</th>';
+			html += '<th>Target</th>';
+			html += '<th>Protocol</th>';
+			html += '<th>Opt</th>';
+			html += '<th>Source</th>';
+			html += '<th>Destination</th>';
+			html += '<th>Notes</th>';
+			html += '</tr>';
+		} else if (int_regex.test(raw_elements[0])) { // starts w/ int
+			var elements	 = raw_elements.splice(0,6);
+			elements.push(raw_elements.join(" "));
+
+			html += '<tr>';
+			for (var j = 0; j < elements.length; j++) {		   
+				html += '<td>';
+				html += elements[j].trim();
+				html += '</td>';
+			}
+
 			html += '<td>';
-			html += elements[j].trim();
+//			   html += '<button type="button" onclick="editDropRule(\'' + chain
+//					   + '\',' + elements[2] + ')">Edit</button>';
+			html += '<button type="button" onclick="deleteDropRule(\'' + chain
+					+ '\',' + elements[0] + ')">Delete</button>';
 			html += '</td>';
+
+			html += '</tr>';
 		}
-
-		html += '<td>';
-//		  html += '<button type="button" onclick="editDropRule(\'' + chain + '\',' + elements[2] + ')">Edit</button>';
-		html += '<button type="button" onclick="deleteDropRule(\'' + chain + '\',' + elements[0] + ')">Delete</button>';
-		html += '</td>';
-
-		html += '</tr>';
 	}
 
 	document.getElementById(table_id).innerHTML = html;
@@ -204,18 +215,11 @@ function deleteDropRule(_chain, _id) {
 	socket.emit('delete drop rule', data);
 }
 
-function readDropRules(_chain) {
-	var data = {chain:_chain};
-	socket.emit('read drop rule', data);
+function readDropRules() {
+	socket.emit('read drop rule', null);
 }
 
-function readAllDropRules() {
-	readDropRules('INPUT');
-	readDropRules('FORWARD');
-	readDropRules('OUTPUT');
-}
-
-readAllDropRules();
+readDropRules();
 
 function inputFocus(input) {
 	if (input.value==input.defaultValue && !input.checked) {
@@ -307,14 +311,7 @@ th, td { padding: 5px; }
 				</h3>
 			</div>
 			<div class="panel-body">
-				<h4>INPUT</h4>
-				<div id="drop rule input table"></div>
-
-				<h4>FORWARD</h4>
-				<div id="drop rule forward table"></div>
-
-				<h4>OUTPUT</h4>
-				<div id="drop rule output table"></div>
+				<div id="drop rule table"></div>
 
 				<br><br>
 

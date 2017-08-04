@@ -818,7 +818,7 @@ io.on('connection', function(socket) {
 	// Packet drop tool: Read
 	socket.on('read drop rule', function(data) {
 		logger.log('read drop rule');
-		var cmd = child_process.exec(_companion_directory + '/scripts/packet_rules.sh read ' + data.chain, function (error, stdout, stderr) {
+		var cmd = child_process.exec(_companion_directory + '/scripts/packet_rules.sh read', function (error, stdout, stderr) {
 			logger.log(stdout + stderr);
 		});
 
