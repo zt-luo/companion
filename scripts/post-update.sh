@@ -1,4 +1,6 @@
 #!/bin/bash
+echo 'STARTING POST UPDATE'
+echo $(printenv)
 
 # Bugfix for revert on first update. 0.0.7 had a bug in update.sh where the companion directory was not copied correctly (no -r option)
 # Do it the right way here so we can revert if
@@ -40,6 +42,27 @@ then
         echo 'Please DO NOT REMOVE POWER FROM THE ROV! (until QGC makes a connection again)'
     sleep 0.1
     sudo reboot
+fi
+
+echo 'check for github in known_hosts'
+
+# Check for github key in known_hosts
+if ! ssh-keygen -H -F github.com; then
+    echo 'none found'
+    
+    mkdir ~/.ssh
+    
+    # Get gihub public key
+    ssh-keyscan -t rsa -H github.com > /tmp/githost
+    
+    # Verify fingerprint
+    if ssh-keygen -lf /tmp/githost | grep -q 16:27:ac:a5:76:28:2d:36:63:1b:56:4d:eb:df:a6:48; then
+        echo 'adding key'
+        # Add to known_hosts
+        cat /tmp/githost >> ~/.ssh/known_hosts
+    fi
+else
+    echo 'already exists'
 fi
 
 cd /home/pi/companion
@@ -133,6 +156,27 @@ if ! ssh-keygen -H -F github.com; then
         # Add to known_hosts
         cat /tmp/githost >> ~/.ssh/known_hosts
     fi
+fi
+
+cd /home/pi/companion
+echo 'Checking ping-python status...'
+PING_STATUS=$(git submodule status | grep ping-python | head -c 1)
+if [[ ! -z $PING_STATUS && ($PING_STATUS == '+' || $PING_STATUS == '-') ]]; then
+    echo 'ping-python needs update.'
+    git submodule update --recursive -f submodules/ping-python
+    echo 'Installing ping-python...'
+    cd /home/pi/companion/submodules/ping-python
+    sudo python setup.py build install || { echo 'ping-python installation failed!'; }
+    if [ $? -ne 0 ] # If "pip install ping-python" failed:
+    then
+        echo 'Failed to install ping python; Aborting update'
+        echo 'Rebooting to repair installation, this will take a few minutes'
+        echo 'Please DO NOT REMOVE POWER FROM THE ROV! (until QGC makes a connection again)'
+        sleep 0.1
+        sudo reboot
+    fi
+else
+    echo 'ping-python is up to date.'
 fi
 
 # install pynmea2 if neccessary
