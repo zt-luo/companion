@@ -4,6 +4,7 @@ import serial
 import socket
 import time
 import json
+import struct
 
 # PingEndpoint dependencies
 from pymavlink import mavutil
@@ -151,7 +152,7 @@ class UDPEndpoint(Endpoint):
                 print('%s write 0x%s to %s') % (self.id, data[:25].encode('hex'), self.destination)
 
         except Exception as e:
-            print e
+            print("Error writing to UDP endpoint: %s") % e
             return
         
     def close(self):
@@ -194,21 +195,23 @@ class PingEndpoint(Endpoint):
     def read(self):
         try:
             response = None
+            data = ""
             while self.myPing.ser.inWaiting():
                 byte = self.myPing.ser.read()
-                if debug:
-                    print('%s read 0x%s') % (self.id, byte.encode('hex'))
-
-                # write data out on all outbound connections
-                for endpoint in self.connections:
-                    endpoint.write(byte, self)
+                data += byte
                 response = self.myPing.parseByte(byte)
                 if response != None:
                     self.last_response = time.time()
                     self.got_response = True
                     self.myPing.handleMessage(response)
                     break
-            
+
+            if len(data) > 0:
+                if debug:
+		    print("%s read 0x%s") % (self.id, data.encode('hex'))
+                for endpoint in self.connections:
+                    endpoint.write(data, self)
+                
             if self.last_remote_request > 1 and time.time() > self.last_response + 0.1:
                 self.myPing.request(Message.es_distance.id)
                 self.last_request = time.time()
@@ -233,7 +236,7 @@ class PingEndpoint(Endpoint):
                         covarience)
                 
         except Exception as e:
-            print e
+            print("Error reading ping endpoint: %s") % e
     
     def close(self):
         self.myPing.ser.close()
@@ -242,19 +245,20 @@ class PingEndpoint(Endpoint):
     def write(self, data, source):
         for byte in data:
             if source.id not in self.parsers:
-                self.parsers[source.id] = Ping.Ping1D(None)
-            self.remote_response = self.parsers[source.id].parseByte(byte)
+                self.parsers[source.id] = Ping.Ping1D(None) # another client has connected
+            self.remote_response = self.parsers[source.id].parseByte(byte) # the response from remote client app
             if self.remote_response is not None:
-                self.last_remote_request = time.time()
-            self.myPing.ser.write(byte)
-            
-            if debug:
-                print('%s write %s') % (self.id, data[:25].encode('hex'))
-            
+                request, payload = self.remote_response
+                self.last_remote_request = time.time() # we have received a valid communication from this client
+                if request is Message.gen_cmd_request.id:
+                    mId = struct.unpack(Message.gen_cmd_request.format, payload)
+                    self.myPing.request(mId[0]);
+                    if debug:
+                        print('%s write %s') % (self.id, data[:25].encode('hex'))
+
         # serial.SerialException
         #print("Error writing: %s") % e
         #return
-        
         
     def to_json(self):
         return {"id": self.id,
