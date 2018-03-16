@@ -13,3 +13,5 @@ cd scripts
 sudo ./surface-setup.sh
 ```
 3. Reboot for the changes to take effect.  The Pi will now create its own access point called "Companion" with the password "companion".
+
+Note: It may be required that the user run `sudo install-wifi` if after running surface-setup.sh and rebooting if the Pi still does not recognize the Wi-Fi dongle.
