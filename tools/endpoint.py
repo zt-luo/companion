@@ -185,7 +185,7 @@ class PingEndpoint(Endpoint):
         print 'Done!'
         
         # Read and print distance measurements with confidence
-        self.myPing.request(Message.es_distance.id)
+        self.myPing.request(Message.ping1D_distance.id)
         self.last_request = time.time()
         self.got_response = False
         self.last_distance_sensor = time.time()
@@ -213,7 +213,7 @@ class PingEndpoint(Endpoint):
                     endpoint.write(data, self)
                 
             if self.last_remote_request > 1 and time.time() > self.last_response + 0.1:
-                self.myPing.request(Message.es_distance.id)
+                self.myPing.request(Message.ping1D_distance.id)
                 self.last_request = time.time()
                 self.got_response = False
                 
@@ -250,9 +250,9 @@ class PingEndpoint(Endpoint):
             if self.remote_response is not None:
                 request, payload = self.remote_response
                 self.last_remote_request = time.time() # we have received a valid communication from this client
-                if request is Message.gen_cmd_request.id:
-                    mId = struct.unpack(Message.gen_cmd_request.format, payload)
-                    self.myPing.request(mId[0]);
+                if payload is None:
+                    #mId = struct.unpack(Message.gen_cmd_request.format, payload)
+                    self.myPing.request(request);
                     if debug:
                         print('%s write %s') % (self.id, data[:25].encode('hex'))
 
