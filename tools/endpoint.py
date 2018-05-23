@@ -250,11 +250,11 @@ class PingEndpoint(Endpoint):
             if self.remote_response is not None:
                 request, payload = self.remote_response
                 self.last_remote_request = time.time() # we have received a valid communication from this client
-                if payload is None:
-                    #mId = struct.unpack(Message.gen_cmd_request.format, payload)
-                    self.myPing.request(request);
-                    if debug:
-                        print('%s write %s') % (self.id, data[:25].encode('hex'))
+                self.myPing.ser.write(data)
+		if debug:
+		    print('%s write %s') % (self.id, data[:25].encode('hex'))
+
+
 
         # serial.SerialException
         #print("Error writing: %s") % e
