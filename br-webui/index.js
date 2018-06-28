@@ -1670,4 +1670,14 @@ io.on('connection', function(socket) {
 		});
 
 	});
+
+	socket.on('set companion as dhcp server', function() {
+		logger.log("Companion set to dhcp server");
+
+		child_process.exec(home_dir+'/companion/scripts/config-dhcp.sh', function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+		logger.log("Done setting");
+
+	});
 });
