@@ -1,13 +1,19 @@
 #!/bin/bash
 
-sudo apt-get update --yes
-sudo apt-get install isc-dhcp-server --yes
+if dpkg-query -W -f='${Status}' isc-dhcp-server 1>/dev/null; then
+	echo "Already installed"
+	sudo apt-get upgrade isc-dhcp-server
+else
+	sudo apt-get update --yes
+	sudo apt-get install isc-dhcp-server --yes
+fi
 
 S1="iface eth0 inet static"
 S2="address 192.168.2.2"
 S3="netmask 255.255.255.0"
 sudo sed -i -e '/iface eth0 inet manual/,+1d' /etc/network/interfaces
 sudo sed -i -e '/eth0 inet static/,+3d' /etc/network/interfaces
+sudo sed -i -e '/eth0 inet dhcp/,+1d' /etc/network/interfaces
 sudo sed -i -e "\$a$S1" \
 -e "\$a$S2" \
 -e "\$a$S3" \
@@ -38,5 +44,6 @@ sudo sed -i -e "/DHCPD_CONF=/s:.*:$S9:" \
 /etc/default/isc-dhcp-server
 
 sudo service isc-dhcp-server restart
+sudo update-rc.d isc-dhcp-server defaults
 sudo reboot now
 

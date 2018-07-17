@@ -1680,4 +1680,13 @@ io.on('connection', function(socket) {
 		logger.log("Done setting");
 
 	});
+	socket.on('set companion as manual', function() {
+		logger.log("Companion set to manual");
+
+		child_process.exec(home_dir+'/companion/scripts/reset-defaults.sh', function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+		logger.log("Done setting");
+
+	});
 });
