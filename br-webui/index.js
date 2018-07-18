@@ -1689,4 +1689,13 @@ io.on('connection', function(socket) {
 		logger.log("Done setting");
 
 	});
+	socket.on('set companion as dhcp client', function() {
+		logger.log("Companion set to dhcp client");
+
+		child_process.exec(home_dir+'/companion/scripts/config-dhcp-client.sh', function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+		logger.log("Done setting");
+
+	});
 });

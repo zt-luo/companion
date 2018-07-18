@@ -211,7 +211,10 @@ function setCompanionMode() {
 	}
 	else if (radios[1].checked)
 	{
-		alert("Configure Client");
+		if (confirm("Are you sure you want to configure Companion as DHCP client?")) {
+			socket.emit('set companion as dhcp client');
+			alert("Companion has been set to DHCP client. Find out the respective new IP address for the pi to reconnect.");
+		}
 	}
 	else if (radios[2].checked)
 	{
