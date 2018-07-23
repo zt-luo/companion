@@ -15,6 +15,9 @@
 		function shutdown() {
 			socket.emit('shutdown');
 		}
+		function recovery() {
+			socket.emit('recovery');
+		}
 		socket.on('companion version', function(data) {
 			document.getElementById('companion version1').innerHTML = data;
 			console.log('got version in header')
@@ -52,6 +55,7 @@
 				<form class="navbar-form navbar-right">
 					<button onclick="reboot()" class="btn btn-primary btn-sm navbar-btn">Reboot</button>
 					<button onclick="shutdown()" class="btn btn-error btn-sm navbar-btn">Shutdown</button>
+					<button onclick="recovery()" class="btn btn-error btn-sm navbar-btn">Update</button>
 				</form>
 			</div><!--/.nav-collapse -->
 		</div>

@@ -1621,6 +1621,12 @@ io.on('connection', function(socket) {
 			logger.log(stdout + stderr);
 		});
 	});
+	socket.on('recovery', function(data) {
+		logger.log('recovery');
+		child_process.exec(home_dir+'/companion/scripts/rebootrecovery.sh', function (error, stdout, stderr) {
+			logger.log(stdout+stderr);
+		});
+	});
 	
 	var uploader = new SocketIOFile(socket, {
 		// uploadDir: {			// multiple directories 
