@@ -215,11 +215,12 @@ var gitsetup = io.of('/gitsetup');
 ///////////////////////////////////////////////////////////////
 
 var Git = require('nodegit');
+var gitnew = require('./git.js')(io);
 
-var _current_HEAD = '';
+var _current_HEAD = gitnew._current_HEAD;
 
 //hack/workaround for remoteCallback spinlock
-var _authenticated = false;
+var _authenticated = gitnew._authenticated;
 
 // We store all of the remote references in this format:
 //var _refs = {
@@ -241,25 +242,19 @@ var _authenticated = false;
 //	}
 //}
 
-var _refs = { 'remotes' : {} };
+var _refs = gitnew._refs;
 
-var companionRepository = null;
+
+var companionRepository = gitnew.companionRepository;
+
+
 Git.Repository.open(_companion_directory)
 	.then(function(repository) {
 		companionRepository = repository;
-		updateCurrentHEAD(companionRepository);
+		gitnew.updateHEAD(companionRepository);
 		emitRemotes();
 	})
 	.catch(function(err) { logger.log(err); });
-
-function updateCurrentHEAD(repository) {
-	repository.head()
-		.then(function(reference) {
-			_current_HEAD = reference.target().tostrS().substring(0,8);
-			io.emit('current HEAD', _current_HEAD);
-			logger.log('Current HEAD:', reference.target().tostrS().substring(0,8));
-		});
-}
 
 //Set up fetch options and credential callback
 var fetchOptions = new Git.FetchOptions();
@@ -365,7 +360,7 @@ function emitRemotes() {
 	
 	_refs = { 'remotes' : {} };
 	
-	updateCurrentHEAD(companionRepository);
+	gitnew.updateHEAD(companionRepository);
 	
 	companionRepository.getRemotes()
 		.then(formatRemotes)
