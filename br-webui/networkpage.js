@@ -126,6 +126,33 @@ module.exports = function (io){
 				});
 			});
 		},
+	
+		networksocketio: function() { 
+			io.on ('connection',function(socket) {			
+
+				socket.on('get current ip', function() {
+					logger.log("get current ip");
+
+					child_process.exec("ifconfig | grep -A 1 'eth0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1", function (error, stdout, stderr) {
+						if(!error) {
+							socket.emit('current ip', stdout);
+						};
+					});
+
+				});
+
+				// used for ethernet configuration
+				socket.on('set default ip', function(ip) {
+					logger.log("set default ip", ip);
+
+					child_process.exec(home_dir+'/companion/scripts/set_default_client_ip.sh ' + ip, function (error, stdout, stderr) {
+						logger.log(stdout + stderr);
+					});
+
+				});
+	
+			});
+		},
 
 		updateInternetStatus: function(should_log) {
 

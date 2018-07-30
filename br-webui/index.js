@@ -536,6 +536,7 @@ gitsetup.on('connection', function(socket) {
 
 var networknew = require("./networkpage.js")(io);
 networknew.networksocket();
+networknew.networksocketio();
 
 networknew.updateInternetStatus(true);
 setInterval(networknew.updateInternetStatus, 2500, false);
@@ -672,24 +673,4 @@ io.on('connection', function(socket) {
 		logger.log('Aborted: ', fileInfo);
 	});
 
-	// used for ethernet configuration
-	socket.on('set default ip', function(ip) {
-		logger.log("set default ip", ip);
-
-		child_process.exec(home_dir+'/companion/scripts/set_default_client_ip.sh ' + ip, function (error, stdout, stderr) {
-			logger.log(stdout + stderr);
-		});
-
-	});
-	
-	socket.on('get current ip', function() {
-		logger.log("get current ip");
-
-		child_process.exec("ifconfig | grep -A 1 'eth0' | tail -1 | cut -d ':' -f 2 | cut -d ' ' -f 1", function (error, stdout, stderr) {
-			if(!error) {
-				socket.emit('current ip', stdout);
-			};
-		});
-
-	});
 });
