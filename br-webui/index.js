@@ -1726,4 +1726,32 @@ io.on('connection', function(socket) {
 		});
 
 	});
+
+	socket.on('set companion as dhcp server', function() {
+		logger.log("Companion set to dhcp server");
+
+		child_process.exec(home_dir+'/companion/scripts/config-dhcp.sh', function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+		logger.log("Done setting");
+
+	});
+	socket.on('set companion as manual', function() {
+		logger.log("Companion set to manual");
+
+		child_process.exec(home_dir+'/companion/scripts/reset-defaults.sh', function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+		logger.log("Done setting");
+
+	});
+	socket.on('set companion as dhcp client', function() {
+		logger.log("Companion set to dhcp client");
+
+		child_process.exec(home_dir+'/companion/scripts/config-dhcp-client.sh', function (error, stdout, stderr) {
+			logger.log(stdout + stderr);
+		});
+		logger.log("Done setting");
+
+	});
 });
