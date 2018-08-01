@@ -810,23 +810,79 @@ function getCpuStatus(callback) {
 }
 function givemav(){
 	var procstatus = {};
+	var status = "&emsp;&emsp;Status:&ensp;".fontcolor("black");
 	
 	var cmd = child_process.exec('screen -ls', function (error, stdout, stderr) {
-		procstatus.mav = stdout.search("mavproxy") < 0 ? "Not Running" : "Running" ;
-		procstatus.vid = stdout.search("video") < 0 ? "Not Running" : "Running" ;
-		procstatus.webterm = stdout.search("webterminal") < 0 ? "Not Running" : "Running" ;
-		procstatus.aud = stdout.search("audio") < 0 ? "Not Running" : "Running" ;
-		procstatus.web = stdout.search("webui") < 0 ? "Not Running" : "Running" ;
-		procstatus.filemanager = stdout.search("file-manager") < 0 ? "Not Running" : "Running" ;
-		procstatus.router = stdout.search("commrouter") < 0 ? "Not Running" : "Running" ;
-		procstatus.nmearx = stdout.search("nmearx") < 0 ? "Not Running" : "Running" ;
-		procstatus.driver = stdout.search("wldriver") < 0 ? "Not Running" : "Running" ;
+		procstatus.mav = stdout.search("mavproxy") < 0 ? "Not Running&emsp;&emsp;" : "Process Running" ;
+		procstatus.vid = stdout.search("video") < 0 ? "Not Running&emsp;&emsp;" : "Process Running" ;
+		procstatus.webterm = stdout.search("webterminal") < 0 ? "Not Running" : "Process Running" ;
+		procstatus.aud = stdout.search("audio") < 0 ? "Not Running&emsp;&emsp;" : "Process Running" ;
+		procstatus.web = stdout.search("webui") < 0 ? "Not Running" : "Process Running";
+		procstatus.filemanager = stdout.search("file-manager") < 0 ? "Not Running" : "Process Running" ;
+		procstatus.router = stdout.search("commrouter") < 0 ? "Not Running" : "Process Running" ;
+		procstatus.nmearx = stdout.search("nmearx") < 0 ? "Not Running" : "Process Running" ;
+		procstatus.driver = stdout.search("wldriver") < 0 ? "Not Running" : "Process Running" ;
 		
+		var cmd1 = child_process.exec('ls /dev/serial/by-id', function (error, stdout, stderr) {
+			if (error) {
+				if (procstatus.mav.search("Process Running") >= 0) {
+					procstatus.mav = procstatus.mav.fontcolor("green") + status + ("Pixhawk is unplugged").fontcolor("red");
+				} else {
+					procstatus.mav = procstatus.mav.fontcolor("red") + status + ("Pixhawk is unplugged").fontcolor("red");
+				}
+				io.emit('getmav', procstatus);			
+			} else {
+				if (procstatus.mav.search("Process Running") >= 0) {
+					procstatus.mav = procstatus.mav.fontcolor("green") + status + ("OK").fontcolor("green");
+				} else {
+					procstatus.mav = procstatus.mav.fontcolor("red") + status + ("Pixhawk is plugged in").fontcolor("green");
+				}
+				io.emit('getmav', procstatus);
+			}
+		});
+
+		var cmd2 = child_process.exec('ls /dev/snd/by-id', function (error, stdout, stderr) {
+			if (error) {
+				if (procstatus.aud.search("Process Running") >= 0) {
+					procstatus.aud = procstatus.aud.fontcolor("green") + status + ("No Audio device found").fontcolor("red");
+				} else {
+					procstatus.aud = procstatus.aud.fontcolor("red") + status + ("No Audio device found").fontcolor("red");
+				}
+				io.emit('getmav', procstatus);			
+			} else {
+				if (procstatus.aud.search("Process Running") >= 0) {
+					procstatus.aud = procstatus.aud.fontcolor("green") + status + ("OK").fontcolor("green");
+				} else {
+					procstatus.aud = procstatus.aud.fontcolor("red") + status + ("Audio device is plugged in").fontcolor("green");
+				}
+				io.emit('getmav', procstatus);
+			}
+		});
+		
+		var cmd3 = child_process.exec('ls /dev/video*', function (error, stdout, stderr) {
+			if (error) {
+				if (procstatus.vid.search("Process Running") >= 0) {
+					procstatus.vid = procstatus.vid.fontcolor("green") + status + ("No Video device found").fontcolor("red");
+				} else {
+					procstatus.vid = procstatus.vid.fontcolor("red") + status + ("No Video device found").fontcolor("red");
+				}
+				io.emit('getmav', procstatus);			
+			} else {
+				if (procstatus.vid.search("Process Running") >= 0) {
+					procstatus.vid = procstatus.vid.fontcolor("green") + status + ("OK").fontcolor("green");
+				} else {
+					procstatus.vid = procstatus.vid.fontcolor("red") + status + ("Video device is plugged in").fontcolor("green");
+				}
+				io.emit('getmav', procstatus);
+			}
+		});
 		for (var key in procstatus) {
-			if (procstatus[key] == "Running") {
+			if (procstatus[key] == "Process Running" && key!="mav" && key!="vid" && key!="aud") {
 				procstatus[key] = procstatus[key].fontcolor("green");
 			} else {
-				procstatus[key] = procstatus[key].fontcolor("red");
+				if (key!="mav" && key!="vid" && key!="aud"){
+					procstatus[key] = procstatus[key].fontcolor("red");
+				}
 			}
 		}
 		io.emit('getmav', procstatus);
