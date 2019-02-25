@@ -32,7 +32,10 @@ os.system("screen -X -S mavproxy quit")
 # Port settings
 port = ''
 if platform.system() == 'Linux':
-    port = '/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v2.x_0-if00'
+    if os.path.exists('/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v2.x_0-if00'):
+        port = '/dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v2.x_0-if00'
+    elif os.path.exists('/dev/serial/by-id/usb-ArduPilot_Pixhawk1_200042000E51343032383731-if00'):
+        port = '/dev/serial/by-id/usb-ArduPilot_Pixhawk1_200042000E51343032383731-if00'
 elif platform.system() == 'Darwin':
     port = '/dev/tty.usbmodem1'
 
